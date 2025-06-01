@@ -42,6 +42,20 @@
 
 ### Install the Plugin
 
+**Option 1: Install from PyPI (Recommended for most users)**
+
+Once the plugin is available on PyPI, you can install it directly using `llm` or `pip`:
+
+```bash
+# Using llm (recommended)
+llm install llm-loop-plugin
+
+# Or using pip
+pip install llm-loop-plugin
+```
+
+**Option 2: Install from source (for development or latest changes)**
+
 1. **Clone this repository**:
    ```bash
    git clone https://github.com/nibzard/llm-loop
@@ -50,7 +64,7 @@
 
 2. **Install the plugin**:
    ```bash
-   # For regular use
+   # For regular use from source
    llm install -e .
 
    # For development (includes dev dependencies like pytest, ruff, mypy)
