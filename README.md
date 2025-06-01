@@ -4,6 +4,8 @@
 
 `llm loop` is a powerful plugin for the [LLM CLI tool](https://github.com/simonw/llm) that enables autonomous, goal-oriented task execution. Unlike traditional single-turn LLM interactions, `llm loop` allows the AI to work persistently towards a goal by making multiple tool calls, analyzing results, and iterating until the task is complete.
 
+![llm-loop-demo](./assets/llm-loop-demo.gif)
+
 ## 🚀 Features
 
 - **Goal-Oriented Execution**: Define a task and let the AI work autonomously to complete it
