@@ -1,9 +1,0 @@
-README.md
-llm_loop.py
-pyproject.toml
-llm_loop_command.egg-info/PKG-INFO
-llm_loop_command.egg-info/SOURCES.txt
-llm_loop_command.egg-info/dependency_links.txt
-llm_loop_command.egg-info/entry_points.txt
-llm_loop_command.egg-info/requires.txt
-llm_loop_command.egg-info/top_level.txt
