@@ -3,19 +3,40 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "llm-loop-command"
-version = "0.2.0"
+name = "llm-loop-plugin"
+version = "0.2.1"
 description = "An LLM CLI plugin to loop tool calls with turn limits and custom system prompts."
 readme = "README.md"
-license = {text = "Apache-2.0"}
+license = "MIT"
 authors = [{name = "nibzard", email = "wave@nibzard.com"}]
 requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+]
+license-files = ["LICENSE"]
 
 dependencies = [
     "llm>=0.26",
     "click>=8.0.0",
     "sqlite-utils>=3.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/nibzard/llm-loop"
+Repository = "https://github.com/nibzard/llm-loop"
+"Bug Tracker" = "https://github.com/nibzard/llm-loop/issues"
+Changelog = "https://github.com/nibzard/llm-loop/releases"
 
 [project.optional-dependencies]
 dev = [

@@ -42,13 +42,17 @@
 
 1. **Clone this repository**:
    ```bash
-   git clone https://github.com/yourusername/llm-loop
+   git clone https://github.com/nibzard/llm-loop
    cd llm-loop
    ```
 
 2. **Install the plugin**:
    ```bash
+   # For regular use
    llm install -e .
+
+   # For development (includes dev dependencies like pytest, ruff, mypy)
+   pip install -e ".[dev]"
    ```
 
 3. **Verify installation**:
@@ -109,10 +113,11 @@ llm loop "Set up a git repository and make initial commit" \
 
 ### Example 1: Create a Flask Web Application
 
-Create a simple tool file first:
+Create a simple tool file first. Note: With the refactoring, `dev_tools.py` has been moved to `llm_loop/plugins/dev_tools.py`. The plugin will automatically discover tools from this location if you are running from the project root or have installed the package. For custom tool files outside the package, you still use the `--functions` flag.
 
+The example `dev_tools.py` content remains relevant:
 ```python
-# dev_tools.py
+# llm_loop/plugins/dev_tools.py
 import os
 import pathlib
 
@@ -155,6 +160,9 @@ llm loop "Create a Flask web application with a homepage and about page" \
   --max-turns 10
 ```
 
+Make sure to adjust the path to `dev_tools.py` if you are not in `my_flask_app` directory and `dev_tools.py` is not in the parent directory.
+If you've installed the package in development mode (`pip install -e ".[dev]"`), `llm-loop` will attempt to load tools from `llm_loop/plugins/dev_tools.py` automatically if no `--functions` flag is provided and the built-in tools are not sufficient.
+
 The AI will:
 1. Create `app.py` with Flask routes
 2. Create HTML templates
@@ -165,35 +173,21 @@ The AI will:
 
 ```bash
 llm loop "Analyze all Python files in this project and generate comprehensive documentation" \
-  --functions dev_tools.py \
+  --functions llm_loop/plugins/dev_tools.py \
   -T filesystem \
   --max-turns 15
 ```
+This assumes you are running the command from the root of the `llm-loop` project. If running from elsewhere after installation, and `dev_tools.py` is part of the installed package, you might not need `--functions` if those tools are made available by default.
 
 ### Example 3: Git Repository Setup (with approval)
 
-```python
-# Add to dev_tools.py
-import subprocess
-
-def run_command(command: str) -> str:
-    """Execute a shell command safely."""
-    try:
-        result = subprocess.run(
-            command, shell=True, capture_output=True,
-            text=True, timeout=30
-        )
-        return f"Command: {command}\nOutput: {result.stdout}\nErrors: {result.stderr}\nReturn code: {result.returncode}"
-    except Exception as e:
-        return f"Error running {command}: {e}"
-```
-
 ```bash
 llm loop "Initialize a git repository, create .gitignore, and make initial commit" \
-  --functions dev_tools.py \
+  --functions llm_loop/plugins/dev_tools.py \
   --tools-approve \
   --max-turns 5
 ```
+Similar to the above, adjust paths or rely on automatic discovery if applicable.
 
 ## 🔧 Advanced Usage
 
@@ -213,7 +207,7 @@ Use `--tools-debug` to see exactly what tools are being called:
 
 ```bash
 llm loop "Create a Python package structure" \
-  --functions dev_tools.py \
+  --functions llm_loop/plugins/dev_tools.py \
   --tools-debug
 ```
 
@@ -223,9 +217,37 @@ For potentially dangerous operations, use `--tools-approve`:
 
 ```bash
 llm loop "Clean up old files and optimize the project structure" \
-  --functions dev_tools.py \
+  --functions llm_loop/plugins/dev_tools.py \
   --tools-approve
 ```
+
+## 🏗️ Project Structure
+
+The `llm-loop` project has been refactored into a modular Python package:
+
+```
+llm_loop/
+├── __init__.py                 # Package entry point
+├── cli.py                      # Click command interface
+├── core/
+│   ├── __init__.py
+│   ├── conversation.py         # ConversationManager class
+│   ├── tools.py               # Tool provider system
+│   └── prompts.py             # System prompt templates
+├── config/
+│   ├── __init__.py
+│   └── settings.py            # Configuration management
+├── utils/
+│   ├── __init__.py
+│   ├── logging.py             # Database logging utilities
+│   ├── validation.py          # Input validation and sanitization
+│   ├── exceptions.py          # Custom exception classes
+│   └── types.py               # Type definitions
+└── plugins/
+    ├── __init__.py
+    └── dev_tools.py           # Default development tools (can be extended)
+```
+This structure promotes separation of concerns, maintainability, and scalability.
 
 ## 🎛️ Configuration
 
@@ -286,7 +308,7 @@ llm models default gpt-4.1-mini
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the `LICENSE` file for details.
 
 ## 🙏 Acknowledgments
 
