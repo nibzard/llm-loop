@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-loop-command"
+version = "0.2.0"
+description = "An LLM CLI plugin to loop tool calls with turn limits and custom system prompts."
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [{name = "nibzard", email = "wave@nibzard.com"}]
+requires-python = ">=3.8"
+
+dependencies = [
+    "llm>=0.26",
+    "click>=8.0.0",
+    "sqlite-utils>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+]
+
+[project.entry-points.llm]
+loop_command = "llm_loop"
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "PIE", "T20", "SIM", "ERA"]
+ignore = ["E501"]  # Line too long handled by black
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"tests/*" = ["T20"]  # Allow print statements in tests
+
+[tool.mypy]
+python_version = "3.8"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_decorators = false  # Click decorators are not typed
+
+[[tool.mypy.overrides]]
+module = "llm.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "sqlite_utils.*"
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=llm_loop --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["llm_loop"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]

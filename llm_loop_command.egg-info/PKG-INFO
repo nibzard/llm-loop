@@ -1,0 +1,260 @@
+Metadata-Version: 2.4
+Name: llm-loop-command
+Version: 0.1.0
+Summary: An LLM CLI plugin to loop tool calls with turn limits and custom system prompts.
+Author-email: nibzard <wave@nibzard.com>
+License: Apache-2.0
+Description-Content-Type: text/markdown
+Requires-Dist: llm>=0.26
+
+You're right! The power of `llm loop` really shines when applied to software development tasks where the LLM can interact with your project files and environment.
+
+Here are some examples focused on building/modifying code projects. For these examples, we'll define hypothetical tools that `llm loop` can use. In a real-world scenario, you'd either use existing LLM tool plugins or write your own more robust versions of these.
+
+---
+
+### Prerequisites for these examples:
+
+1.  **Your `llm loop` plugin is installed** (as per the previous instructions).
+2.  **Set up an LLM model** (e.g., `llm keys set openai` and `llm models default gpt-4o`). More capable models like GPT-4o or Claude 3.5 Sonnet will perform better on these complex tasks.
+3.  **Create a directory for your project**:
+    ```bash
+    mkdir my_flask_project
+    cd my_flask_project
+    ```
+
+---
+
+### Tool Definitions (save as `dev_tools.py`)
+
+We'll create a Python file `dev_tools.py` with some basic functions that our LLM can call.
+
+```python
+# dev_tools.py
+import os
+import subprocess
+import pathlib
+
+def write_file(file_path: str, content: str) -> str:
+    """
+    Writes or overwrites content to the specified file.
+    Creates directories if they don't exist.
+    Returns a success message or an error string.
+    """
+    try:
+        p = pathlib.Path(file_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(content)
+        return f"File '{file_path}' written successfully."
+    except Exception as e:
+        return f"Error writing file '{file_path}': {str(e)}"
+
+def read_file(file_path: str) -> str:
+    """
+    Reads and returns the content of the specified file.
+    Returns an error message if the file cannot be read.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        return f"Error reading file '{file_path}': {str(e)}"
+
+def list_directory(path: str = ".") -> str:
+    """
+    Lists files and directories in the specified path (default: current directory).
+    Returns a newline-separated list of items or an error message.
+    """
+    try:
+        items = os.listdir(path)
+        if not items:
+            return f"Directory '{path}' is empty."
+        return "\n".join(items)
+    except Exception as e:
+        return f"Error listing directory '{path}': {str(e)}"
+
+def run_shell_command(command: str) -> str:
+    """
+    Executes a shell command and returns its stdout and stderr.
+    CAUTION: This tool can execute arbitrary commands. Use with extreme care and approval.
+    Returns a string containing stdout and stderr, or an error message.
+    """
+    try:
+        process = subprocess.run(
+            command,
+            shell=True,
+            check=False, # Don't raise exception for non-zero exit codes immediately
+            capture_output=True,
+            text=True,
+            timeout=30 # Add a timeout
+        )
+        output = f"COMMAND: {command}\n"
+        output += f"STDOUT:\n{process.stdout}\n"
+        if process.stderr:
+            output += f"STDERR:\n{process.stderr}\n"
+        output += f"RETURN CODE: {process.returncode}"
+        return output
+    except subprocess.TimeoutExpired:
+        return f"Error: Command '{command}' timed out."
+    except Exception as e:
+        return f"Error running command '{command}': {str(e)}"
+
+```
+
+---
+
+### Example 1: Create a Simple Flask Landing Page (Default Loop Prompt)
+
+This uses the default prompt for your `llm loop` command if no prompt is provided by the user.
+
+**Command:**
+
+```bash
+# Ensure you are in your my_flask_project directory
+# Delete any existing app.py or templates folder if you're rerunning
+rm -rf app.py templates/
+
+llm loop --functions dev_tools.py -T write_file -T list_directory --td --max-turns 10
+```
+*   We provide the `dev_tools.py` file for functions.
+*   We explicitly enable `write_file` and `list_directory` (the LLM might not need `list_directory` here but it's good practice to list relevant tools).
+*   `--td` shows us the tool calls.
+*   `--max-turns 10` gives it a decent number of steps.
+
+**Expected Interaction (Simplified - actual output will be verbose with `--td`):**
+
+The LLM should:
+1.  **Think**: "I need a main Python file for Flask and an HTML template."
+2.  **Tool Call (write\_file)**:
+    ```
+    Tool call: write_file({'file_path': 'app.py', 'content': '# app.py\nfrom flask import Flask, render_template\n\napp = Flask(__name__)\n\n@app.route("/")\ndef home():\n    return render_template("index.html")\n\nif __name__ == "__main__":\n    app.run(debug=True)'})
+      File 'app.py' written successfully.
+    ```
+3.  **Tool Call (write\_file)**:
+    ```
+    Tool call: write_file({'file_path': 'templates/index.html', 'content': '<!DOCTYPE html>\n<html>\n<head><title>Underground Pokemon Fighting Club</title></head>\n<body><h1>Welcome, Challenger!</h1><p>The first rule of Pokemon Fight Club is... you DO talk about Pokemon Fight Club!</p></body>\n</html>'})
+      File 'templates/index.html' written successfully.
+    ```
+4.  **Tool Call (write\_file)** (Optional, for `requirements.txt`):
+    ```
+    Tool call: write_file({'file_path': 'requirements.txt', 'content': 'Flask\n'})
+      File 'requirements.txt' written successfully.
+    ```
+5.  **Final LLM Response**: "Flask application structure created. `app.py` and `templates/index.html` are ready. You may also want a `requirements.txt` with 'Flask'. To run: `python app.py`. TASK\_COMPLETE."
+
+**After running:**
+You should find `app.py`, `templates/index.html`, and possibly `requirements.txt` in your `my_flask_project` directory.
+
+---
+
+### Example 2: Modifying an Existing File
+
+Let's say we want to add a new route `/rules` to the Flask app created above.
+
+**Command:**
+
+```bash
+# Make sure app.py and templates/index.html exist from Example 1
+
+llm loop "Add a new route '/rules' to app.py that renders a new template 'rules.html'. The rules page should just say 'Rule 1: Have fun!'" \
+    --functions dev_tools.py -T read_file -T write_file --td --max-turns 10
+```
+*   We need `read_file` so the LLM can see the current `app.py`.
+*   We need `write_file` to create `rules.html` and to overwrite `app.py` with the new content.
+
+**Expected Interaction (Simplified):**
+
+1.  **LLM Think**: "First, I need to see what `app.py` looks like."
+2.  **Tool Call (read\_file)**:
+    ```
+    Tool call: read_file({'file_path': 'app.py'})
+      # app.py
+      from flask import Flask, render_template
+      # ... (rest of file content)
+    ```
+3.  **LLM Think**: "Okay, I have the content. Now I'll add the new route and prepare the `rules.html` template."
+4.  **Tool Call (write\_file)**:
+    ```
+    Tool call: write_file({'file_path': 'templates/rules.html', 'content': '<!DOCTYPE html>\n<html>\n<head><title>Club Rules</title></head>\n<body><h1>Rules</h1><p>Rule 1: Have fun!</p></body>\n</html>'})
+      File 'templates/rules.html' written successfully.
+    ```
+5.  **Tool Call (write\_file)** (for `app.py` - content will be the *entire new content* of `app.py`):
+    ```
+    Tool call: write_file({'file_path': 'app.py', 'content': '# app.py\nfrom flask import Flask, render_template\n\napp = Flask(__name__)\n\n@app.route("/")\ndef home():\n    return render_template("index.html")\n\n@app.route("/rules")\ndef rules():\n    return render_template("rules.html")\n\nif __name__ == "__main__":\n    app.run(debug=True)'})
+      File 'app.py' written successfully.
+    ```
+6.  **Final LLM Response**: "Added the `/rules` route to `app.py` and created `templates/rules.html`. TASK\_COMPLETE."
+
+**After running:**
+Your `app.py` should be updated, and `templates/rules.html` should exist.
+
+---
+
+### Example 3: Using Shell Commands (with caution and approval!)
+
+**IMPORTANT**: The `run_shell_command` tool is powerful and potentially dangerous. The `--ta` (tool approve) flag is *highly recommended* for any real use of such a tool.
+
+Let's try to initialize a git repository and make an initial commit.
+
+**Command:**
+
+```bash
+# Still in my_flask_project, assuming files from previous examples exist.
+# Remove .git directory if it exists from a previous run: rm -rf .git
+
+llm loop "Initialize a git repository here, add all files, and make an initial commit with the message 'Initial project setup'." \
+    --functions dev_tools.py -T run_shell_command --td --ta --max-turns 5
+```
+
+**Expected Interaction (Simplified, showing approval steps):**
+
+1.  **LLM Think**: "First, initialize git."
+2.  **LLM Response**: (Might give some text first, then...)
+    ```
+    Tool call: run_shell_command({'command': 'git init'})
+    Approve tool call? [Y/n]: y
+      COMMAND: git init
+      STDOUT:
+      Initialized empty Git repository in /path/to/my_flask_project/.git/
+      STDERR:
+      RETURN CODE: 0
+    ```
+3.  **LLM Think**: "Now add all files."
+4.  **LLM Response**:
+    ```
+    Tool call: run_shell_command({'command': 'git add .'})
+    Approve tool call? [Y/n]: y
+      COMMAND: git add .
+      STDOUT:
+      STDERR:
+      RETURN CODE: 0
+    ```
+5.  **LLM Think**: "Now commit."
+6.  **LLM Response**:
+    ```
+    Tool call: run_shell_command({'command': 'git commit -m "Initial project setup"'})
+    Approve tool call? [Y/n]: y
+      COMMAND: git commit -m "Initial project setup"
+      STDOUT:
+      [master (root-commit) abc1234] Initial project setup
+       3 files changed, 20 insertions(+)
+       create mode 100644 app.py
+       create mode 100644 requirements.txt
+       create mode 100644 templates/index.html
+       create mode 100644 templates/rules.html
+      STDERR:
+      RETURN CODE: 0
+    ```
+7.  **Final LLM Response**: "Git repository initialized, files added, and initial commit made. TASK\_COMPLETE."
+
+**After running:**
+Your `my_flask_project` directory should now be a git repository with an initial commit. You can verify with `git log`.
+
+---
+
+These examples should give you a good idea of how `llm loop` can be used for more involved software development tasks by leveraging tools. The key is to:
+*   Provide the LLM with the right tools.
+*   Craft your prompt to clearly state the end goal.
+*   Use `--td` to understand the LLM's actions and `--ta` for any potentially impactful tools.
+*   Iterate on your prompts and tool definitions if the LLM isn't behaving as expected.
