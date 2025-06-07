@@ -127,6 +127,8 @@ llm loop "Set up a git repository and make initial commit" \
 
 ## 📚 Examples
 
+Additional examples can be found in [EXAMPLES.md](EXAMPLES.md).
+
 ### Example 1: Create a Flask Web Application
 
 Create a simple tool file first. Note: With the refactoring, `dev_tools.py` has been moved to `llm_loop/plugins/dev_tools.py`. The plugin will automatically discover tools from this location if you are running from the project root or have installed the package. For custom tool files outside the package, you still use the `--functions` flag.
