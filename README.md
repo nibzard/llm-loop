@@ -14,6 +14,7 @@
 - **Interactive Control**: Configure turn limits, approve tool calls, and guide the process
 - **Comprehensive Logging**: Track all interactions and tool calls for debugging and analysis
 - **Safety Features**: Built-in approval mechanisms for potentially dangerous operations
+- **Conversation Export/Import**: Save and reload conversation history
 
 ## 📦 Installation
 
@@ -124,6 +125,8 @@ llm loop "Set up a git repository and make initial commit" \
 | `--internal-cl` | Chain limit for tool calls within a single turn |
 | `--no-log` | Disable logging to database |
 | `--log` | Force logging even if globally disabled |
+| `--export-conversation` | Save conversation history to JSON |
+| `--import-conversation` | Load conversation history from JSON before start |
 
 ## 📚 Examples
 

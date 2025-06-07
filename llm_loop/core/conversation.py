@@ -2,7 +2,9 @@
 
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+from pathlib import Path
+import json
 from typing import Optional, Dict, Any, List, Callable
 
 import click
@@ -218,3 +220,46 @@ class ConversationManager:
     def _approve_tool_call(self, call) -> bool:
         """Tool approval callback."""
         return click.confirm(f"Approve tool call: {call}?", default=True)
+
+    def export_conversation(self, path: Path) -> str:
+        """Export conversation history to a JSON file."""
+        try:
+            data = []
+            for response in self.conversation.responses:
+                item = {
+                    "prompt": getattr(response.prompt, "prompt", ""),
+                    "response": response.text(),
+                    "tool_calls": [asdict(tc) for tc in response.tool_calls()],
+                }
+                data.append(item)
+
+            with Path(path).open("w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            return f"📤 Conversation exported to {path}"
+        except Exception as e:
+            return f"❌ Failed to export conversation: {e}"
+
+    def import_conversation(self, path: Path) -> str:
+        """Import conversation history from a JSON file."""
+        try:
+            with Path(path).open("r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            for item in data:
+                prompt_obj = llm.models.Prompt(item.get("prompt", ""), model=self.model)
+                response = llm.models.Response(
+                    prompt_obj,
+                    self.model,
+                    stream=False,
+                    conversation=self.conversation,
+                )
+                response._chunks = [item.get("response", "")]
+                response._done = True
+                response._tool_calls = [
+                    llm.models.ToolCall(**tc) for tc in item.get("tool_calls", [])
+                ]
+                self.conversation.responses.append(response)
+
+            return f"📥 Conversation imported from {path}"
+        except Exception as e:
+            return f"❌ Failed to import conversation: {e}"

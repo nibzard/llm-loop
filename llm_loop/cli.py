@@ -135,6 +135,18 @@ def register_commands(cli):
             "continue (0 for no limit)."
         ),
     )
+    @click.option(
+        "export_path",
+        "--export-conversation",
+        type=click.Path(dir_okay=False, allow_dash=False, resolve_path=True),
+        help="Export conversation history to this JSON file",
+    )
+    @click.option(
+        "import_path",
+        "--import-conversation",
+        type=click.Path(dir_okay=False, allow_dash=False, resolve_path=True),
+        help="Load conversation history from this JSON file",
+    )
     def loop_command(
         prompt_text: str,
         model_id: Optional[str],
@@ -150,6 +162,8 @@ def register_commands(cli):
         no_log_flag: bool,
         force_log_flag: bool,
         max_turns: int,
+        export_path: Optional[str],
+        import_path: Optional[str],
     ):
         """
         Run LLM in a loop to achieve a goal, automatically calling tools.
@@ -253,6 +267,13 @@ def register_commands(cli):
         # Execute the loop
         try:
             conversation_manager = ConversationManager(model, loop_config)
+            if import_path:
+                click.echo(
+                    conversation_manager.import_conversation(
+                        pathlib.Path(import_path)
+                    ),
+                    err=True,
+                )
             result: LoopResult = conversation_manager.execute_loop(
                 prompt_text,
                 final_system_prompt,
@@ -260,6 +281,13 @@ def register_commands(cli):
                 actual_options,
                 key,
             )
+            if export_path:
+                click.echo(
+                    conversation_manager.export_conversation(
+                        pathlib.Path(export_path)
+                    ),
+                    err=True,
+                )
 
             click.echo("\n--- Loop finished ---", err=True)
 
