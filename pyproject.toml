@@ -29,7 +29,6 @@ license-files = ["LICENSE"]
 dependencies = [
     "llm>=0.26",
     "click>=8.0.0",
-    "sqlite-utils>=3.0.0",
 ]
 
 [project.urls]
@@ -68,10 +67,6 @@ disallow_untyped_decorators = false  # Click decorators are not typed
 
 [[tool.mypy.overrides]]
 module = "llm.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "sqlite_utils.*"
 ignore_missing_imports = true
 
 [tool.black]

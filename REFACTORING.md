@@ -101,7 +101,7 @@ class ToolProvider(ABC):
 # Implementations:
 # - BuiltinToolProvider
 # - FileSystemToolProvider
-# - LegacyToolProvider (compatibility)
+# - BuiltinToolProvider (module-level functions)
 ```
 
 ### 5. Configuration Management

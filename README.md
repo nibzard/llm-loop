@@ -9,10 +9,9 @@
 ## 🚀 Features
 
 - **Goal-Oriented Execution**: Define a task and let the AI work autonomously to complete it
-- **Tool Integration**: Seamlessly use LLM tools and functions to interact with your environment
-- **Iterative Problem Solving**: The AI can chain multiple tool calls and adapt based on results
+- **Tool Integration**: Seamlessly use built-in tools and custom Python functions
+- **Iterative Problem Solving**: Chain multiple tool calls and adapt based on results
 - **Interactive Control**: Configure turn limits, approve tool calls, and guide the process
-- **Comprehensive Logging**: Track all interactions and tool calls for debugging and analysis
 - **Safety Features**: Built-in approval mechanisms for potentially dangerous operations
 - **Conversation Export/Import**: Save and reload conversation history
 
@@ -101,14 +100,14 @@ Tools are what make `llm loop` powerful. You can use existing LLM tools or creat
 
 ```bash
 # Using built-in or installed tools
-llm loop "Analyze the current directory structure" -T filesystem
+llm loop "Analyze the current directory structure" --functions llm_loop/plugins/dev_tools.py
 
 # Using custom Python functions
 llm loop "Create a Flask app" --functions dev_tools.py
 
 # Multiple tools
 llm loop "Set up a git repository and make initial commit" \
-  -T filesystem -T shell --tools-approve
+  --tools-approve
 ```
 
 ## 🛠️ Command Options
@@ -117,14 +116,11 @@ llm loop "Set up a git repository and make initial commit" \
 |--------|-------------|
 | `-m, --model` | Specify the LLM model to use |
 | `-s, --system` | Override the default system prompt |
-| `-T, --tool` | Enable specific tools (can be used multiple times) |
 | `--functions` | Python file containing custom tool functions |
 | `--max-turns` | Maximum conversation turns (default: 25) |
 | `--td, --tools-debug` | Show detailed tool execution information |
 | `--ta, --tools-approve` | Manually approve each tool call |
 | `--internal-cl` | Chain limit for tool calls within a single turn |
-| `--no-log` | Disable logging to database |
-| `--log` | Force logging even if globally disabled |
 | `--export-conversation` | Save conversation history to JSON |
 | `--import-conversation` | Load conversation history from JSON before start |
 
@@ -195,7 +191,6 @@ The AI will:
 ```bash
 llm loop "Analyze all Python files in this project and generate comprehensive documentation" \
   --functions llm_loop/plugins/dev_tools.py \
-  -T filesystem \
   --max-turns 15
 ```
 This assumes you are running the command from the root of the `llm-loop` project. If running from elsewhere after installation, and `dev_tools.py` is part of the installed package, you might not need `--functions` if those tools are made available by default.
@@ -260,13 +255,12 @@ llm_loop/
 │   └── settings.py            # Configuration management
 ├── utils/
 │   ├── __init__.py
-│   ├── logging.py             # Database logging utilities
 │   ├── validation.py          # Input validation and sanitization
 │   ├── exceptions.py          # Custom exception classes
 │   └── types.py               # Type definitions
 └── plugins/
     ├── __init__.py
-    └── dev_tools.py           # Default development tools (can be extended)
+    └── dev_tools.py           # Default development tools (module-level funcs)
 ```
 This structure promotes separation of concerns, maintainability, and scalability.
 
@@ -276,14 +270,11 @@ This structure promotes separation of concerns, maintainability, and scalability
 
 - `LLM_MODEL`: Default model to use
 - `LLM_TOOLS_DEBUG`: Enable tools debugging by default
-- `LLM_LOGS_OFF`: Disable logging by default
+<!-- No logging env vars; plugin does not write logs -->
 
 ### Logging
 
-All interactions are logged to an SQLite database by default:
-- Location: `~/.config/io.datasette.llm/logs.db`
-- Disable with `--no-log`
-- Force enable with `--log`
+This plugin does not write to a database. Keep your terminal scrollback or direct output to files if needed.
 
 ## 🚨 Safety Considerations
 

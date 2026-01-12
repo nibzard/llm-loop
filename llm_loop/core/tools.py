@@ -25,19 +25,17 @@ class BuiltinToolProvider(ToolProvider):
     """Provider for built-in development tools."""
 
     def get_tools(self) -> List[ToolFunction]:
-        """Load built-in tools from plugins directory."""
-        tools = []
+        """Load built-in tools from plugins directory as module-level functions."""
+        tools: List[ToolFunction] = []
 
         try:
-            # Try to import dev_tools from the plugins directory
-            from ..plugins.dev_tools import SecureFileOperations
+            # Import the module and collect its public functions
+            from .. import plugins as _plugins  # noqa: F401
+            from ..plugins import dev_tools as _dev_tools
 
-            # Get all methods from SecureFileOperations
-            for name, method in inspect.getmembers(
-                SecureFileOperations, inspect.isfunction
-            ):
-                if not name.startswith("_"):  # Exclude private methods
-                    tools.append(method)
+            for name, func in inspect.getmembers(_dev_tools, inspect.isfunction):
+                if not name.startswith("_"):
+                    tools.append(func)
                     click.echo(f"Loaded built-in tool: {name}", err=True)
 
         except ImportError as e:
@@ -90,27 +88,6 @@ class FileSystemToolProvider(ToolProvider):
         return tools
 
 
-class LegacyToolProvider(ToolProvider):
-    """Provider for legacy tool specifications (compatibility layer)."""
-
-    def __init__(self, tool_specs: List[str]):
-        """Initialize with list of tool specifications."""
-        self.tool_specs = tool_specs
-
-    def get_tools(self) -> List[ToolFunction]:
-        """Load tools from specifications."""
-        tools = []
-
-        # For now, just log that these are not yet implemented
-        for tool_spec in self.tool_specs:
-            click.echo(
-                f"Note: Tool spec '{tool_spec}' specified but not yet implemented",
-                err=True,
-            )
-
-        return tools
-
-
 class ToolManager:
     """Manages multiple tool providers and consolidates tools."""
 
@@ -139,16 +116,14 @@ class ToolManager:
         return all_tools
 
     @classmethod
-    def create_from_specs(
+    def create(
         cls,
-        tool_specs: Optional[List[str]] = None,
         python_tool_paths: Optional[List[str]] = None,
         include_builtin: bool = True,
     ) -> "ToolManager":
         """Create tool manager from specifications.
 
         Args:
-            tool_specs: List of tool specifications
             python_tool_paths: List of Python file paths containing tools
             include_builtin: Whether to include built-in tools
 
@@ -164,9 +139,5 @@ class ToolManager:
         # Add file-based tools
         if python_tool_paths:
             manager.add_provider(FileSystemToolProvider(python_tool_paths))
-
-        # Add legacy tool specs
-        if tool_specs:
-            manager.add_provider(LegacyToolProvider(tool_specs))
 
         return manager

@@ -1,5 +1,7 @@
-"""Plugin system for LLM Loop tools."""
+"""Built-in plugin tools for LLM Loop.
 
-from .dev_tools import SecureFileOperations
+Module `llm_loop.plugins.dev_tools` exposes validated, module-level tool functions
+such as `write_file`, `read_file`, `list_directory`, etc.
+"""
 
-__all__ = ["SecureFileOperations"]
+__all__ = []

@@ -21,8 +21,6 @@ class LoopConfig:
     internal_chain_limit: int = 0
     tools_debug: bool = False
     tools_approve: bool = False
-    should_log: bool = True
-    log_db_path: Optional[str] = None
 
 
 class ConversationManager:

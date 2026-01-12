@@ -15,7 +15,6 @@ from .core import (
     DEFAULT_SYSTEM_PROMPT_TEMPLATE,
 )
 from .config import LoopSettings
-from .utils.logging import setup_logging
 from .utils.exceptions import ConversationError
 from .utils.types import ToolFunction, LoopResult
 
@@ -41,20 +40,11 @@ def system_prompt_option(f):
 
 
 def tool_options_for_loop(f):
-    """Click decorator for tool-related options."""
-    f = click.option(
-        "tools_specs",
-        "-T",
-        "--tool",
-        multiple=True,
-        help="Name of a tool or Toolbox to make available "
-        "(e.g., llm_time, 'MyToolbox(arg=1)')",
-    )(f)
+    """Click decorator for tool-related options (simplified)."""
     f = click.option(
         "python_tools_paths",
         "--functions",
-        help="Python code block or file path defining functions "
-        "to register as tools",
+        help="Python file(s) with functions to register as tools",
         multiple=True,
     )(f)
     f = click.option(
@@ -109,22 +99,6 @@ def register_commands(cli):
     )
     @click.option("--key", help="API key to use for the model")
     @click.option(
-        "log_db_path_override",
-        "-d",
-        "--database",
-        type=click.Path(dir_okay=False, allow_dash=False, resolve_path=True),
-        help="Path to log database",
-    )
-    @click.option(
-        "no_log_flag", "-n", "--no-log", is_flag=True, help="Don't log to database"
-    )
-    @click.option(
-        "force_log_flag",
-        "--log",
-        is_flag=True,
-        help="Log prompt and response (overrides logs off)",
-    )
-    @click.option(
         "max_turns",
         "--max-turns",
         type=int,
@@ -151,16 +125,12 @@ def register_commands(cli):
         prompt_text: str,
         model_id: Optional[str],
         system: Optional[str],
-        tools_specs: Tuple[str, ...],
         python_tools_paths: Tuple[str, ...],
         tools_debug: bool,
         tools_approve: bool,
         internal_chain_limit: int,
         options_tuples: Tuple[Tuple[str, str], ...],
         key: Optional[str],
-        log_db_path_override: Optional[str],
-        no_log_flag: bool,
-        force_log_flag: bool,
         max_turns: int,
         export_path: Optional[str],
         import_path: Optional[str],
@@ -181,22 +151,20 @@ def register_commands(cli):
             model_id=model_id,
             max_turns=max_turns,
             system_prompt=system,
-            log_db_path=log_db_path_override,
             tools_debug=tools_debug,
             tools_approve=tools_approve,
         )
 
         # Warn if no tools specified
-        if not tools_specs and not python_tools_paths:
+        if not python_tools_paths:
             click.echo(
-                "Warning: 'loop' command initiated without any tools "
-                "explicitly specified using -T or --functions.",
+                "Warning: 'loop' command initiated without any custom tools "
+                "provided via --functions.",
                 err=True,
             )
             click.echo(
-                "The model will only use its internal knowledge or default "
-                "tools unless tools from other plugins are auto-available "
-                "and relevant.",
+                "The model will only use built-in dev tools unless --functions "
+                "are provided.",
                 err=True,
             )
 
@@ -224,21 +192,8 @@ def register_commands(cli):
         # Process model options
         actual_options = _process_model_options(model, options_tuples)
 
-        # Set up logging
-        should_log = not no_log_flag and (force_log_flag or settings.log_database_path)
-        db_path = settings.log_database_path
-        if log_db_path_override:
-            db_path = log_db_path_override
-
-        db = (
-            setup_logging(pathlib.Path(db_path) if db_path else None)
-            if should_log
-            else None
-        )
-
         # Set up tools
-        tool_manager = ToolManager.create_from_specs(
-            tool_specs=list(tools_specs),
+        tool_manager = ToolManager.create(
             python_tool_paths=list(python_tools_paths),
             include_builtin=True,
         )
@@ -260,8 +215,6 @@ def register_commands(cli):
             internal_chain_limit=internal_chain_limit,
             tools_debug=settings.tools_debug,
             tools_approve=settings.tools_approve,
-            should_log=should_log,
-            log_db_path=str(db.path) if db and hasattr(db, "path") else None,
         )
 
         # Execute the loop
