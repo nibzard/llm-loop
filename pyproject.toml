@@ -7,7 +7,7 @@ packages = ["llm_loop"]
 
 [project]
 name = "llm-loop-plugin"
-version = "0.2.1"
+version = "0.2.2"
 description = "An LLM CLI plugin to loop tool calls with turn limits and custom system prompts."
 readme = "README.md"
 license = "MIT"
